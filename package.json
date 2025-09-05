@@ -1,5 +1,8 @@
 {
-  "name": "webpconvert",
+  "name": "@growdash/webpconvert",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "version": "3.0.1",
   "description": "CLI Converter from png/jpg images to webp",
