@@ -73,23 +73,38 @@ const isFile = (str) => !!getExt(str);
 
 const source = argv._[0] || '.';
 
-let PNGImages = '';
-let JPGImages = '';
+// Determine quality from args (0-100)
+const QUALITY = Number.isFinite(Number(argv.quality))
+  ? Math.max(0, Math.min(100, Number(argv.quality)))
+  : 80;
+
+let PNGGlobs = [];
+let JPGGlobs = [];
+let baseDir = '';
 
 if (isFile(source)) {
   const extension = getExt(source).toLowerCase();
   if (extension === 'png') {
-    PNGImages = source;
+    PNGGlobs = [source];
   } else if (extension === 'jpg' || extension === 'jpeg') {
-    JPGImages = source;
+    JPGGlobs = [source];
   }
+  baseDir = dirname(source);
 } else {
-  let wildcard = '*';
-  if (argv.recursive) {
-    wildcard = '**/*';
-  }
-  PNGImages = resolve(source, `${wildcard}.png`);
-  JPGImages = resolve(source, `${wildcard}.jpg`);
+  const wildcard = '**/*';
+  baseDir = source;
+  // Add explicit upper/lowercase variants to avoid FS-specific case issues
+  PNGGlobs = [
+    resolve(source, `${wildcard}.png`),
+    resolve(source, `${wildcard}.PNG`),
+  ];
+  // Support both jpg and jpeg
+  JPGGlobs = [
+    resolve(source, `${wildcard}.jpg`),
+    resolve(source, `${wildcard}.JPG`),
+    resolve(source, `${wildcard}.jpeg`),
+    resolve(source, `${wildcard}.JPEG`),
+  ];
 }
 
 let target = argv._[1] || source || '.';
@@ -100,10 +115,10 @@ if (isFile(target)) {
 
 // Processing
 
-if (PNGImages) {
-  gulp.src(PNGImages, { nocase: true })
+if (PNGGlobs.length) {
+  gulp.src(PNGGlobs, { nocase: true, base: baseDir })
     .pipe(imagemin([webp({
-      quality: argv.quality,
+      quality: QUALITY,
     })], {
       verbose: !argv.mute,
       silent: false,
@@ -112,14 +127,53 @@ if (PNGImages) {
     .pipe(gulp.dest(target));
 }
 
-if (JPGImages) {
-  gulp.src(JPGImages, { nocase: true })
+if (JPGGlobs.length) {
+  gulp.src(JPGGlobs, { nocase: true, base: baseDir })
     .pipe(imagemin([webp({
-      quality: argv.quality,
+      quality: QUALITY,
     })], {
       verbose: !argv.mute,
       silent: false,
     }))
     .pipe(rename({ prefix: argv.prefix, suffix: argv.suffix, extname: '.webp' }))
     .pipe(gulp.dest(target));
+}
+
+// If output root differs, copy non-image files as-is preserving structure
+try {
+  const sourceIsFile = isFile(source);
+  const targetResolved = resolve(target);
+  const sourceResolved = resolve(sourceIsFile ? dirname(source) : source);
+  const shouldCopyNonImages = !sourceIsFile && targetResolved !== sourceResolved;
+  if (shouldCopyNonImages) {
+    const allFiles = resolve(sourceResolved, '**/*');
+    const notPng = `!${resolve(sourceResolved, '**/*.png')}`;
+    const notPngUpper = `!${resolve(sourceResolved, '**/*.PNG')}`;
+    const notJpg = `!${resolve(sourceResolved, '**/*.jpg')}`;
+    const notJpgUpper = `!${resolve(sourceResolved, '**/*.JPG')}`;
+    const notJpeg = `!${resolve(sourceResolved, '**/*.jpeg')}`;
+    const notJpegUpper = `!${resolve(sourceResolved, '**/*.JPEG')}`;
+    const notWebp = `!${resolve(sourceResolved, '**/*.webp')}`;
+    const notWebpUpper = `!${resolve(sourceResolved, '**/*.WEBP')}`;
+    gulp.src([
+      allFiles,
+      notPng,
+      notPngUpper,
+      notJpg,
+      notJpgUpper,
+      notJpeg,
+      notJpegUpper,
+      notWebp,
+      notWebpUpper,
+    ], {
+      base: sourceResolved,
+      nocase: true,
+    })
+      .pipe(gulp.dest(target));
+  }
+} catch (e) {
+  if (!argv.mute) {
+    // eslint-disable-next-line no-console
+    console.error(e);
+  }
 }
