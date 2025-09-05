@@ -71,7 +71,9 @@ const getExt = (str) => {
 };
 const isFile = (str) => !!getExt(str);
 
-const source = argv._[0] || '.';
+// Positional args, ignoring option-like tokens just in case
+const positionals = (argv._ || []).filter((token) => typeof token === 'string' && !String(token).startsWith('-'));
+const source = positionals[0] || '.';
 
 // Determine quality from args (0-100)
 const QUALITY = Number.isFinite(Number(argv.quality))
@@ -107,7 +109,11 @@ if (isFile(source)) {
   ];
 }
 
-let target = argv._[1] || source || '.';
+let target = positionals[1];
+
+if (!target || String(target).startsWith('-')) {
+  target = isFile(source) ? dirname(source) : (source || '.');
+}
 
 if (isFile(target)) {
   target = dirname(target);
