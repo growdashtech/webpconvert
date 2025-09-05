@@ -1,5 +1,5 @@
 {
-  "name": "@ugurgrowdash/webpconvert",
+  "name": "@elacays/webpconvert",
   "publishConfig": {
     "access": "public"
   },
@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rizqirizqi/webpconvert.git"
+    "url": "git+https://github.com/ugurgrowdash/webpconvert.git"
   },
   "keywords": [
     "cli",
@@ -33,8 +33,9 @@
   "author": "Mgs. M. Rizqi Fadhlurrahman <rizqirizqi23@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rizqirizqi/webpconvert/issues"
+    "url": "https://github.com/ugurgrowdash/webpconvert/issues"
   },
+  "homepage": "https://github.com/ugurgrowdash/webpconvert#readme",
   "dependencies": {
     "gulp": "^4.0.2",
     "gulp-imagemin": "^8.0.0",
